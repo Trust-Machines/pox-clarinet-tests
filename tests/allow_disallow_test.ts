@@ -15,13 +15,13 @@ Clarinet.test({
     const contractCaller = accounts.get("wallet_1")!;
     const user = accounts.get("wallet_2")!;
     const intermediary = contracts.get("intermediary")!;
-    const pox2 = contracts.get("pox-2")!;
+    const pox2 = contracts.get("pox-3")!;
     
     /*
     // Deploy the intermediary contract
     const intermediary = `
-      (define-public (call-check-caller-allowed (pox-2 principal))
-        (contract-call? pox-2 check-caller-allowed)
+      (define-public (call-check-caller-allowed (pox-3 principal))
+        (contract-call? pox-3 check-caller-allowed)
       )
     `;
     chain.deployContract(
@@ -33,7 +33,7 @@ Clarinet.test({
 
     // Test 1: Check that the contract caller is allowed when tx-sender == contract-caller
     let allowed = chain.callReadOnlyFn(
-      "pox-2",
+      "pox-3",
       "check-caller-allowed",
       [],
       deployer.address
@@ -43,7 +43,7 @@ Clarinet.test({
     // Test 2: Allow contract caller and check allowance
     const allowBlock = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "allow-contract-caller",
         [types.principal(contractCaller.address), types.some(types.uint(200))],
         deployer.address
@@ -53,7 +53,7 @@ Clarinet.test({
 
     // Check the allowance
     const allowance = chain.callReadOnlyFn(
-      "pox-2",
+      "pox-3",
       "get-allowance-contract-callers",
       [types.principal(deployer.address), types.principal(contractCaller.address)],
       deployer.address
@@ -62,7 +62,7 @@ Clarinet.test({
 
     // Test 3: Check that the contract caller is now allowed
     allowed = chain.callReadOnlyFn(
-      "pox-2",
+      "pox-3",
       "call-check-caller-allowed",
       [types.principal(pox2.address)],
       contractCaller.address
@@ -82,7 +82,7 @@ Clarinet.test({
     // Test 5: Disallow contract caller and check that the allowance is removed
     const disallowBlock = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "disallow-contract-caller",
         [types.principal(contractCaller.address)],
         deployer.address
@@ -92,7 +92,7 @@ Clarinet.test({
 
     // Check the allowance
     const removedAllowance = chain.callReadOnlyFn(
-      "pox-2",
+      "pox-3",
       "get-allowance-contract-callers",
       [types.principal(deployer.address), types.principal(contractCaller.address)],
       deployer.address
@@ -111,7 +111,7 @@ Clarinet.test({
     // Test 7: Allow contract caller with no expiry
     const allowNoExpiryBlock = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "allow-contract-caller",
         [types.principal(contractCaller.address), types.none()],
         deployer.address
@@ -121,7 +121,7 @@ Clarinet.test({
 
     // Check the allowance
     const noExpiryAllowance = chain.callReadOnlyFn(
-      "pox-2",
+      "pox-3",
       "get-allowance-contract-callers",
       [types.principal(deployer.address), types.principal(contractCaller.address)],
       deployer.address

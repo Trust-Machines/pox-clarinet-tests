@@ -6,26 +6,29 @@ import {
   Tx,
   types,
 } from "https://deno.land/x/clarinet@v1.5.4/index.ts";
+import { Pox3 } from "./models/pox-3.ts";
 
 Clarinet.test({
-  name: "stack-stx: successfully lock STX",
+  name: "stack-stx: Successfully lock STX",
   async fn(chain: Chain, accounts: Map<string, Account>) {
+    const pox3 = new Pox3(chain, accounts.get("deployer")!);
     const sender = accounts.get("wallet_1")!;
-    const initialAmount = 50000;
+    const initialBalance = sender.balance;
+    const amountStacked = 800000;
     const startBurnHeight = 10;
     const lockPeriod = 10;
 
     let block = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "stack-stx",
         [
-          types.uint(initialAmount),
+          types.uint(amountStacked),
           types.tuple({
-            version: types.buff(Uint8Array.from([5])),
+            version: types.buff(Uint8Array.from([4])),
             hashbytes: types.buff(
               Uint8Array.from([
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
               ])
             ),
           }),
@@ -38,11 +41,22 @@ Clarinet.test({
 
     assertEquals(block.receipts.length, 1);
     block.receipts[0].result.expectOk();
+
+    // Advance to next reward cycle
+    pox3.advanceByFullCycle();
+
+    // Confirm STX is locked
+    let account = pox3.stxAccountFromPoxData(sender.address)
+      .result
+      .expectTuple();
+
+    account.unlocked.expectUint(initialBalance - amountStacked);
+    account.locked.expectUint(amountStacked);
   },
 });
 
 Clarinet.test({
-  name: "stack-stx: already stacking user cannot stack again",
+  name: "stack-stx: Already stacking user cannot stack again",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const sender = accounts.get("wallet_1")!;
     const initialAmount = 50000;
@@ -52,15 +66,15 @@ Clarinet.test({
     // First stack operation
     let block = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "stack-stx",
         [
           types.uint(initialAmount),
           types.tuple({
-            version: types.buff(Uint8Array.from([5])),
+            version: types.buff(Uint8Array.from([4])),
             hashbytes: types.buff(
               Uint8Array.from([
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
               ])
             ),
           }),
@@ -77,15 +91,15 @@ Clarinet.test({
     // Second stack operation (attempting to stack again)
     block = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "stack-stx",
         [
           types.uint(initialAmount),
           types.tuple({
-            version: types.buff(Uint8Array.from([5])),
+            version: types.buff(Uint8Array.from([4])),
             hashbytes: types.buff(
               Uint8Array.from([
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
               ])
             ),
           }),
@@ -97,15 +111,14 @@ Clarinet.test({
     ]);
 
     assertEquals(block.receipts.length, 1);
-    let ERR_STACKING_ALREADY_STACKED = 3;
     block.receipts[0].result
       .expectErr()
-      .expectInt(ERR_STACKING_ALREADY_STACKED);
+      .expectInt(Pox3.ERR_STACKING_ALREADY_STACKED);
   },
 });
 
 Clarinet.test({
-  name: "stack-stx: user with insufficient funds cannot stack",
+  name: "stack-stx: User with insufficient funds cannot stack",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const sender = accounts.get("wallet_1")!;
     const initialAmount = 100000000; // An amount greater than the user's balance
@@ -114,15 +127,15 @@ Clarinet.test({
 
     let block = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "stack-stx",
         [
           types.uint(initialAmount),
           types.tuple({
-            version: types.buff(Uint8Array.from([5])),
+            version: types.buff(Uint8Array.from([4])),
             hashbytes: types.buff(
               Uint8Array.from([
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
               ])
             ),
           }),
@@ -134,15 +147,14 @@ Clarinet.test({
     ]);
 
     assertEquals(block.receipts.length, 1);
-    let ERR_STACKING_INSUFFICIENT_FUNDS = 1;
     block.receipts[0].result
       .expectErr()
-      .expectInt(ERR_STACKING_INSUFFICIENT_FUNDS);
+      .expectInt(Pox3.ERR_STACKING_INSUFFICIENT_FUNDS);
   },
 });
 
 Clarinet.test({
-  name: "stack-stx: user with invalid start burn height cannot stack",
+  name: "stack-stx: User with invalid start burn height cannot stack",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const sender = accounts.get("wallet_1")!;
     const initialAmount = 50000;
@@ -151,15 +163,15 @@ Clarinet.test({
 
     let block = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "stack-stx",
         [
           types.uint(initialAmount),
           types.tuple({
-            version: types.buff(Uint8Array.from([5])),
+            version: types.buff(Uint8Array.from([4])),
             hashbytes: types.buff(
               Uint8Array.from([
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
               ])
             ),
           }),
@@ -171,15 +183,14 @@ Clarinet.test({
     ]);
 
     assertEquals(block.receipts.length, 1);
-    let ERR_INVALID_START_BURN_HEIGHT = 24;
     block.receipts[0].result
       .expectErr()
-      .expectInt(ERR_INVALID_START_BURN_HEIGHT);
+      .expectInt(Pox3.ERR_INVALID_START_BURN_HEIGHT);
   },
 });
 
 Clarinet.test({
-  name: "stack-stx: user who is already delegating cannot stack",
+  name: "stack-stx: User who is already delegating cannot stack",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const sender = accounts.get("wallet_1")!;
     const delegate = accounts.get("wallet_2")!;
@@ -190,7 +201,7 @@ Clarinet.test({
     // Delegate operation
     let block = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "delegate-stx",
         [
           types.uint(initialAmount),
@@ -208,15 +219,15 @@ Clarinet.test({
     // Attempt to stack after delegating
     block = chain.mineBlock([
       Tx.contractCall(
-        "pox-2",
+        "pox-3",
         "stack-stx",
         [
           types.uint(initialAmount),
           types.tuple({
-            version: types.buff(Uint8Array.from([5])),
+            version: types.buff(Uint8Array.from([4])),
             hashbytes: types.buff(
               Uint8Array.from([
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
               ])
             ),
           }),
@@ -228,9 +239,8 @@ Clarinet.test({
     ]);
 
     assertEquals(block.receipts.length, 1);
-    let ERR_STACKING_ALREADY_DELEGATED = 20;
     block.receipts[0].result
       .expectErr()
-      .expectInt(ERR_STACKING_ALREADY_DELEGATED);
+      .expectInt(Pox3.ERR_STACKING_ALREADY_DELEGATED);
   },
 });

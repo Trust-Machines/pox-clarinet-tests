@@ -1,0 +1,6 @@
+# Clarinet cache
+.cache/
+history.txt
+
+# Code coverage files
+coverage.lcov

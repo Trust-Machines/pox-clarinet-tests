@@ -7,21 +7,18 @@
 
 ## Run
 
-```
-clarinet test
-```
-
-```
-clarinet test --coverage
+```sh
+clarinet test             # Run tests
+clarinet test --coverage  # Run tests and generate coverage.lcov file
 ```
 
 ## Notes
 
-- `pox-mainnet.clar` constants are hardcoded in to `pox-2.clar`.
-- A check in `stack-stx` was comment out to avoid some complex checks for hashbytes.
-```
-;;DEBUG (try! (can-stack-stx pox-addr amount-ustx first-reward-cycle lock-period))
-```
+- `pox-mainnet.clar` constants are hardcoded in to `pox-3.clar`.
+- `The build-in function `stx-account` doesn't work in this test environment
+  - A drop-in replacement function, `stx-account-from-pox-data`, is hardcoded into `pox-3.clar`
+  - Instances of `stx-account` have been commented out from `pox-3.clar` and replaced with this function
+  - This function may not work in all cases. In particular, `unlock-height` is probably not correct
 
 ## Functions
 

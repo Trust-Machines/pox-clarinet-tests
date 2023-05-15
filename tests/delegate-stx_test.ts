@@ -6,10 +6,9 @@ import {
     Tx,
     types,
 } from "https://deno.land/x/clarinet@v1.5.4/index.ts";
-import { BuiltIn } from "./models/builtin.ts";
 
 Clarinet.test({
-    name: "pox-2: Test delegate-stx and revoke-delegate-stx",
+    name: "pox-3: Test delegate-stx and revoke-delegate-stx",
     async fn(chain: Chain, accounts: Map<string, Account>) {
         const deployer = accounts.get("deployer")!;
         const wallet_1 = accounts.get("wallet_1")!;
@@ -18,7 +17,7 @@ Clarinet.test({
         // Set burnchain parameters
         const setBurnParams = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "set-burnchain-parameters",
                 [
                     types.uint(100),
@@ -37,7 +36,7 @@ Clarinet.test({
         // Test delegate-stx
         const delegateBlock = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "delegate-stx",
                 [
                     types.uint(80_000_000_000_000),
@@ -55,7 +54,7 @@ Clarinet.test({
         // Test revoke-delegate-stx
         const revokeBlock = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "revoke-delegate-stx",
                 [],
                 wallet_1.address
@@ -69,7 +68,7 @@ Clarinet.test({
 
 // Test delegate-stx with locked STX and then revoking it
 Clarinet.test({
-    name: "pox-2: Test delegate-stx with locked STX and then revoke-delegate-stx",
+    name: "pox-3: Test delegate-stx with locked STX and then revoke-delegate-stx",
     async fn(chain: Chain, accounts: Map<string, Account>) {
         const deployer = accounts.get("deployer")!;
         const wallet_1 = accounts.get("wallet_1")!;
@@ -78,7 +77,7 @@ Clarinet.test({
         // Set burnchain parameters
         const setBurnParams = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "set-burnchain-parameters",
                 [
                     types.uint(100),
@@ -97,7 +96,7 @@ Clarinet.test({
         // Test delegate-stx
         const delegateBlock = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "delegate-stx",
                 [
                     types.uint(80000000000000),
@@ -113,7 +112,7 @@ Clarinet.test({
         delegateBlock.receipts[0].result.expectOk();
 
         // Check delegation status
-        let result = chain.callReadOnlyFn("pox-2", "get-delegation-info", [types.principal(wallet_1.address)], wallet_1.address);
+        let result = chain.callReadOnlyFn("pox-3", "get-delegation-info", [types.principal(wallet_1.address)], wallet_1.address);
         let resultTuple = result.result.expectSome().expectTuple();
         assertEquals( Number(resultTuple["amount-ustx"].replace(/[^0-9\.]+/g,"")), 80000000000000);
         assertEquals( resultTuple["delegated-to"], wallet_2.address);
@@ -121,7 +120,7 @@ Clarinet.test({
         // Test revoke-delegate-stx
         const revokeBlock = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "revoke-delegate-stx",
                 [],
                 wallet_1.address
@@ -132,14 +131,14 @@ Clarinet.test({
         revokeBlock.receipts[0].result.expectOk().expectBool(true);
 
         // Check delegation status after revoking
-        result = chain.callReadOnlyFn("pox-2", "get-delegation-info", [types.principal(wallet_1.address)], wallet_1.address);
+        result = chain.callReadOnlyFn("pox-3", "get-delegation-info", [types.principal(wallet_1.address)], wallet_1.address);
         resultTuple = result.result.expectNone();
     },
 });
 
 // Test delegate-stx with insufficient unlocked STX
 Clarinet.test({
-    name: "pox-2: Test delegate-stx with insufficient unlocked STX",
+    name: "pox-3: Test delegate-stx with insufficient unlocked STX",
     async fn(chain: Chain, accounts: Map<string, Account>) {
         const deployer = accounts.get("deployer")!;
         const wallet_1 = accounts.get("wallet_1")!;
@@ -147,7 +146,7 @@ Clarinet.test({
         // Set burnchain parameters
         const setBurnParams = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "set-burnchain-parameters",
                 [
                     types.uint(100),
@@ -166,7 +165,7 @@ Clarinet.test({
         // Test delegate-stx with insufficient unlocked STX
         const delegateBlock = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "delegate-stx",
                 [
                     types.uint(2_000_000_000_000_000),
@@ -183,7 +182,7 @@ Clarinet.test({
         delegateBlock.receipts[0].result.expectOk(); //Err().expectUint(17); // ERR_DELEGATE_STX_INSUFFICIENT_STX
 
         // Check delegation status - it should not be delegated
-        let result = chain.callReadOnlyFn("pox-2", "get-check-delegation", [types.principal(wallet_1.address)], wallet_1.address);
+        let result = chain.callReadOnlyFn("pox-3", "get-check-delegation", [types.principal(wallet_1.address)], wallet_1.address);
         //result.expectNone();
 
     },
@@ -191,7 +190,7 @@ Clarinet.test({
 
 // Test delegate-stx with unlocked STX and then revoking it
 Clarinet.test({
-    name: "pox-2: Test delegate-stx with unlocked STX and then revoke-delegate-stx",
+    name: "pox-3: Test delegate-stx with unlocked STX and then revoke-delegate-stx",
     async fn(chain: Chain, accounts: Map<string, Account>) {
         const deployer = accounts.get("deployer")!;
         const wallet_1 = accounts.get("wallet_1")!;
@@ -200,7 +199,7 @@ Clarinet.test({
         // Set burnchain parameters
         const setBurnParams = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "set-burnchain-parameters",
                 [
                     types.uint(100),
@@ -219,7 +218,7 @@ Clarinet.test({
         // Test delegate-stx with unlocked STX
         const delegateBlock = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "delegate-stx",
                 [
                     types.uint(500_000_000_000_000),
@@ -235,7 +234,7 @@ Clarinet.test({
         delegateBlock.receipts[0].result.expectOk();
 
         // Check delegation status
-        let result = chain.callReadOnlyFn("pox-2", "get-delegation-info", [types.principal(wallet_1.address)], wallet_1.address);
+        let result = chain.callReadOnlyFn("pox-3", "get-delegation-info", [types.principal(wallet_1.address)], wallet_1.address);
         let resultTuple = result.result.expectSome().expectTuple();
         assertEquals( Number(resultTuple["amount-ustx"].replace(/[^0-9\.]+/g,"")), 500_000_000_000_000);
         assertEquals( resultTuple["delegated-to"], wallet_2.address);
@@ -243,7 +242,7 @@ Clarinet.test({
         // Test revoke-delegate-stx
         const revokeBlock = chain.mineBlock([
             Tx.contractCall(
-                "pox-2",
+                "pox-3",
                 "revoke-delegate-stx",
                 [],
                 wallet_1.address
@@ -255,7 +254,7 @@ Clarinet.test({
 
         // Check delegation status after revoking
         // Unlocked STX should be back to the wallet, but that is outside of the contract in the node
-        result = chain.callReadOnlyFn("pox-2", "get-check-delegation", [types.principal(wallet_1.address)], wallet_1.address);
+        result = chain.callReadOnlyFn("pox-3", "get-check-delegation", [types.principal(wallet_1.address)], wallet_1.address);
         result.result.expectNone();
     },
 });  
